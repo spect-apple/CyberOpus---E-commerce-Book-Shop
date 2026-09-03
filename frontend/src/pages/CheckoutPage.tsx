@@ -86,21 +86,20 @@ export default function CheckoutPage() {
       setProcessingStep('Confirming your order...')
 
       const cardDigits = payment.cardNumber.replace(/\s/g, '')
-      const order = await placeOrder({
+      const rawYear = Number(expYear)
+      const fullYear = rawYear > 0 && rawYear < 100 ? 2000 + rawYear : rawYear || new Date().getFullYear() + 2
+      const response = await placeOrder({
         addressId,
         rewardPointsToRedeem: useRewards ? rewardPoints : 0,
-        payment: {
-          cardHolderName: payment.cardHolderName,
-          cardNumber: cardDigits.length >= 16 ? cardDigits : cardDigits.padStart(16, '4'),
-          expiryMonth: Number(expMonth) || 12,
-          expiryYear: Number(expYear) || new Date().getFullYear() + 2,
-          cvv: payment.cvv || '123',
-        },
+        cardHolderName: payment.cardHolderName,
+        cardNumber: cardDigits.length >= 16 ? cardDigits : cardDigits.padStart(16, '4'),
+        expiryMonth: Number(expMonth) || 12,
+        expiryYear: fullYear,
       })
       setProcessingStep('Order placed!')
       await new Promise(r => setTimeout(r, 400))
       await refreshCart()
-      navigate(`/orders/${order.id}`, { state: { justPlaced: true } })
+      navigate(`/orders/${response.order.id}`, { state: { justPlaced: true } })
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
       setError(msg || 'Failed to place order. Please check your details.')

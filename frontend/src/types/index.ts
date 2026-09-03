@@ -184,13 +184,15 @@ export interface BookFilters {
 export interface CheckoutRequest {
   addressId: number;
   rewardPointsToRedeem?: number;
-  payment: {
-    cardHolderName: string;
-    cardNumber: string;
-    expiryMonth: number;
-    expiryYear: number;
-    cvv: string;
-  };
+  cardHolderName: string;
+  cardNumber: string;
+  expiryMonth: number;
+  expiryYear: number;
+}
+
+export interface CheckoutResponse {
+  order: Order;
+  payment: unknown;
 }
 
 export interface AdminStats {

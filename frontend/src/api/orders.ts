@@ -1,5 +1,5 @@
 import api from './axios'
-import type { Order, PageResponse, CheckoutRequest } from '../types'
+import type { Order, PageResponse, CheckoutRequest, CheckoutResponse } from '../types'
 
 export const getOrders = async (page = 0, size = 10): Promise<PageResponse<Order>> => {
   const res = await api.get<PageResponse<Order>>(`/orders?page=${page}&size=${size}`)
@@ -11,8 +11,8 @@ export const getOrder = async (id: number): Promise<Order> => {
   return res.data
 }
 
-export const placeOrder = async (data: CheckoutRequest): Promise<Order> => {
-  const res = await api.post<Order>('/orders', data)
+export const placeOrder = async (data: CheckoutRequest): Promise<CheckoutResponse> => {
+  const res = await api.post<CheckoutResponse>('/checkout', data)
   return res.data
 }
 
