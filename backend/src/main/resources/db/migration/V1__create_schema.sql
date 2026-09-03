@@ -1,0 +1,157 @@
+-- V1: Create all tables
+
+CREATE TABLE IF NOT EXISTS categories (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    image_url VARCHAR(500),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS brands (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    logo_url VARCHAR(500),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS users (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'CUSTOMER',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS books (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title VARCHAR(500) NOT NULL,
+    author VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL,
+    stock_quantity INT NOT NULL DEFAULT 0,
+    isbn VARCHAR(20),
+    image_url VARCHAR(500),
+    publication_year INT,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    category_id BIGINT REFERENCES categories(id),
+    brand_id BIGINT REFERENCES brands(id),
+    sales_count BIGINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_books_category ON books(category_id);
+CREATE INDEX IF NOT EXISTS idx_books_brand ON books(brand_id);
+CREATE INDEX IF NOT EXISTS idx_books_active ON books(active);
+CREATE INDEX IF NOT EXISTS idx_books_sales ON books(sales_count DESC);
+
+CREATE TABLE IF NOT EXISTS carts (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id BIGINT NOT NULL UNIQUE REFERENCES users(id),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS cart_items (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    cart_id BIGINT NOT NULL REFERENCES carts(id) ON DELETE CASCADE,
+    book_id BIGINT NOT NULL REFERENCES books(id),
+    quantity INT NOT NULL DEFAULT 1,
+    price_at_add DECIMAL(10,2) NOT NULL,
+    added_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(cart_id, book_id)
+);
+
+CREATE TABLE IF NOT EXISTS addresses (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    full_name VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(20) NOT NULL,
+    line1 VARCHAR(500) NOT NULL,
+    line2 VARCHAR(500),
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(100) NOT NULL,
+    postal_code VARCHAR(20) NOT NULL,
+    country VARCHAR(100) NOT NULL DEFAULT 'US',
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_addresses_user ON addresses(user_id);
+
+CREATE TABLE IF NOT EXISTS orders (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    subtotal DECIMAL(10,2) NOT NULL,
+    delivery_charge DECIMAL(10,2) NOT NULL DEFAULT 0,
+    discount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    total DECIMAL(10,2) NOT NULL,
+    reward_points_earned INT NOT NULL DEFAULT 0,
+    reward_points_redeemed INT NOT NULL DEFAULT 0,
+    snapshot_full_name VARCHAR(255) NOT NULL,
+    snapshot_line1 VARCHAR(500) NOT NULL,
+    snapshot_line2 VARCHAR(500),
+    snapshot_city VARCHAR(100) NOT NULL,
+    snapshot_state VARCHAR(100) NOT NULL,
+    snapshot_postal_code VARCHAR(20) NOT NULL,
+    snapshot_country VARCHAR(100) NOT NULL,
+    snapshot_phone VARCHAR(20) NOT NULL,
+    placed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+CREATE INDEX IF NOT EXISTS idx_orders_placed_at ON orders(placed_at DESC);
+
+CREATE TABLE IF NOT EXISTS order_items (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    book_id BIGINT REFERENCES books(id),
+    quantity INT NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL,
+    total_price DECIMAL(10,2) NOT NULL,
+    book_title VARCHAR(500) NOT NULL,
+    book_author VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS payments (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    order_id BIGINT NOT NULL UNIQUE REFERENCES orders(id),
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    card_holder_name VARCHAR(255),
+    masked_card_number VARCHAR(20),
+    amount DECIMAL(10,2) NOT NULL,
+    processed_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS reward_points (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id BIGINT NOT NULL UNIQUE REFERENCES users(id),
+    balance INT NOT NULL DEFAULT 0,
+    total_earned INT NOT NULL DEFAULT 0,
+    total_redeemed INT NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS reward_point_transactions (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    reward_points_id BIGINT NOT NULL REFERENCES reward_points(id),
+    type VARCHAR(30) NOT NULL,
+    points INT NOT NULL,
+    description VARCHAR(500),
+    order_id BIGINT REFERENCES orders(id),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_rpt_reward_points ON reward_point_transactions(reward_points_id);
+CREATE INDEX IF NOT EXISTS idx_rpt_order ON reward_point_transactions(order_id);

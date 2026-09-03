@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-Content \"C:\\\\Users\\\\mathiJeeva\\\\Documents\\\\CyberOpus\\\\build_output.txt\" -Raw | Select-String -Pattern \"cannot find symbol|error:\" -AllMatches | ForEach-Object { $_.Matches } | Select-Object -First 5 Value)"
+    ]
+  }
+}
